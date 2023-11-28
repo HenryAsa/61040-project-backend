@@ -1,4 +1,22 @@
-# 6.1040 Social Media Starter Backend Code
+# 6.1040 Sharefolio Backend API Testing Repository
+
+## [Sharefolio Backend API Testing Vercel Deployment](https://sharefolio.vercel.app/)
+
+## Team Contacts
+
+Team Email: [61040-project@mit.edu](mailto:61040-project@mit.edu)
+
+### Team Members
+
+| Name             | GitHub                                             |
+| ---------------- | -------------------------------------------------- |
+| Henry Asa        | [@HenryAsa](https://github.com/HenryAsa)           |
+| Amir Kazeminia   | [@amirika20](https://github.com/amirika20)         |
+| Cal Wilson       | [@calwilsn](https://github.com/calwilsn)           |
+| Jonatan Fontanez | [@DragonStorm25](https://github.com/DragonStorm25) |
+
+
+# 6.1040 Backend Template Setup Instructions
 
 ## Getting Started
 
