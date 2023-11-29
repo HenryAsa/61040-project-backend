@@ -77,6 +77,12 @@ const operations: operation[] = [
     method: "DELETE",
     fields: { id: "input" },
   },
+  {
+    name: "Get Friends",
+    endpoint: "/api/friends",
+    method: "GET",
+    fields: {},
+  },
 ];
 
 // Do not edit below here.
