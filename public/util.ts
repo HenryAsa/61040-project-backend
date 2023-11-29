@@ -95,6 +95,12 @@ const operations: operation[] = [
     method: "POST",
     fields: { to: "input" },
   },
+  {
+    name: "Cancel Friend Request",
+    endpoint: "/api/friend/requests/:to",
+    method: "DELETE",
+    fields: { to: "input" },
+  },
 ];
 
 // Do not edit below here.
