@@ -113,6 +113,12 @@ const operations: operation[] = [
     method: "PUT",
     fields: { from: "input" },
   },
+  {
+    name: "Remove Friend",
+    endpoint: "/api/friends/:friend",
+    method: "DELETE",
+    fields: { friend: "input" },
+  },
 ];
 
 // Do not edit below here.
