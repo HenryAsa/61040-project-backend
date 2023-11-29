@@ -89,6 +89,12 @@ const operations: operation[] = [
     method: "GET",
     fields: {},
   },
+  {
+    name: "Send Friend Request",
+    endpoint: "/api/friend/requests/:to",
+    method: "POST",
+    fields: { to: "input" },
+  },
 ];
 
 // Do not edit below here.
