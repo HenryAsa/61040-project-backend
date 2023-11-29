@@ -101,6 +101,18 @@ const operations: operation[] = [
     method: "DELETE",
     fields: { to: "input" },
   },
+  {
+    name: "Accept Friend Request",
+    endpoint: "/api/friend/accept/:from",
+    method: "PUT",
+    fields: { from: "input" },
+  },
+  {
+    name: "Reject Friend Request",
+    endpoint: "/api/friend/reject/:from",
+    method: "PUT",
+    fields: { from: "input" },
+  },
 ];
 
 // Do not edit below here.
