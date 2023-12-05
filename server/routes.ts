@@ -2,7 +2,8 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { AIAgent, Friend, Interest, Post, User, WebSession } from "./app";
+import { AIAgent, Friend, Interest, Media, Post, User, WebSession } from "./app";
+import { MediaDoc } from "./concepts/media";
 import { PostDoc, PostOptions } from "./concepts/post";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
@@ -63,6 +64,53 @@ class Routes {
     return { msg: "Logged out!" };
   }
 
+  ///////////////
+  //// MEDIA ////
+  ///////////////
+
+  @Router.post("/media")
+  async createMedia(session: WebSessionDoc, media_url: string, target?: ObjectId) {
+    const user = WebSession.getUser(session);
+    const media = await Media.create(user, media_url, target);
+    return { msg: media.msg, media: media.media };
+  }
+
+  @Router.get("/media/:id")
+  async getMediaById(id: ObjectId) {
+    const media = await Media.getMediaById(id);
+    return { msg: `Successfully retrieved the media '${id}'`, media: media };
+  }
+
+  @Router.get("/media/byUsername/:username")
+  async getMediaByUsername(username: string) {
+    const user = await User.getUserByUsername(username);
+    const media = await Media.getMediaByCreator(user._id);
+    return { msg: `Successfully retrieved the media ${user.username} uploaded`, media: media };
+  }
+
+  @Router.get("/media/byTarget/:target")
+  async getMediaByTarget(target: ObjectId) {
+    return await Media.getMediaByTarget(target);
+  }
+
+  @Router.patch("/media/:_id")
+  async updateMedia(session: WebSessionDoc, _id: ObjectId, update: Partial<MediaDoc>) {
+    const user = WebSession.getUser(session);
+    await Media.isCreator(_id, user);
+    return await Media.update(_id, update);
+  }
+
+  @Router.delete("/media/:_id")
+  async deleteMedia(session: WebSessionDoc, _id: ObjectId) {
+    const user = WebSession.getUser(session);
+    await Media.isCreator(_id, user);
+    return Media.delete(_id, user);
+  }
+
+  ///////////////
+  //// POSTS ////
+  ///////////////
+
   @Router.get("/posts")
   async getPosts(author?: string) {
     let posts;
@@ -95,6 +143,10 @@ class Routes {
     await Post.isAuthor(user, _id);
     return Post.delete(_id);
   }
+
+  /////////////////
+  //// FRIENDS ////
+  /////////////////
 
   @Router.get("/friends")
   async getFriends(session: WebSessionDoc) {
@@ -167,6 +219,10 @@ class Routes {
     const user = WebSession.getUser(session);
     return await AIAgent.getByUser(user);
   }
+
+  //////////////////
+  //// AI AGENT ////
+  //////////////////
 
   @Router.patch("/aiagent")
   async getHelp(session: WebSessionDoc, decision: string) {
