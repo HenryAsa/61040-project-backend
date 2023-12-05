@@ -36,7 +36,9 @@
     "express-session": "^1.17.3",
     "mongodb": "^5.7.0",
     "morgan": "^1.10.0",
-    "reflect-metadata": "^0.1.13"
+    "openai": "^4.20.1",
+    "reflect-metadata": "^0.1.13",
+    "ts-newsapi": "^1.0.2"
   },
   "prettier": {
     "trailingComma": "all",

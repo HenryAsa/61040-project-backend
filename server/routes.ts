@@ -2,7 +2,7 @@ import { ObjectId } from "mongodb";
 
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Friend, Post, User, WebSession } from "./app";
+import { AIAgent, Friend, Interest, Post, User, WebSession } from "./app";
 import { PostDoc, PostOptions } from "./concepts/post";
 import { UserDoc } from "./concepts/user";
 import { WebSessionDoc } from "./concepts/websession";
@@ -28,7 +28,12 @@ class Routes {
   @Router.post("/users")
   async createUser(session: WebSessionDoc, username: string, password: string) {
     WebSession.isLoggedOut(session);
-    return await User.create(username, password);
+    const user = await User.create(username, password);
+    if (user.user?._id) {
+      await Interest.create(user.user?._id);
+      await AIAgent.create(user.user?._id);
+    }
+    return user;
   }
 
   @Router.patch("/users")
@@ -41,6 +46,7 @@ class Routes {
   async deleteUser(session: WebSessionDoc) {
     const user = WebSession.getUser(session);
     WebSession.end(session);
+    await Interest.delete(user);
     return await User.delete(user);
   }
 
@@ -135,6 +141,52 @@ class Routes {
     const user = WebSession.getUser(session);
     const fromId = (await User.getUserByUsername(from))._id;
     return await Friend.rejectRequest(fromId, user);
+  }
+
+  @Router.patch("/interests")
+  async addInterest(session: WebSessionDoc, interests: Array<string>) {
+    const user = WebSession.getUser(session);
+    return await Interest.update(user, interests);
+  }
+
+  @Router.get("/interests")
+  async getInterests(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    return (await Interest.getByUser(user)).interests;
+  }
+
+  @Router.get("/news")
+  async addNews(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    const tmp = await Interest.getNews(user);
+    return tmp;
+  }
+
+  @Router.get("/chatbox")
+  async addMessages(session: WebSessionDoc) {
+    const user = WebSession.getUser(session);
+    return await AIAgent.getByUser(user);
+  }
+
+  @Router.patch("/aiagent")
+  async getHelp(session: WebSessionDoc, decision: string) {
+    const user = WebSession.getUser(session);
+    await AIAgent.send(user, decision);
+    const responce = await AIAgent.getResponce(user, decision);
+    return responce;
+  }
+
+  @Router.patch("/aiagent/send")
+  async send(session: WebSessionDoc, decision: string) {
+    const user = WebSession.getUser(session);
+    return await AIAgent.send(user, decision);
+  }
+
+  @Router.patch("/aiagent/receive")
+  async receive(session: WebSessionDoc, decision: string) {
+    const user = WebSession.getUser(session);
+    const responce = await AIAgent.getResponce(user, decision);
+    return responce;
   }
 }
 
