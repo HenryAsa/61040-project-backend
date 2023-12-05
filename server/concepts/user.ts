@@ -1,25 +1,33 @@
-import { ObjectId } from "mongodb";
+import { Filter, ObjectId } from "mongodb";
 import DocCollection, { BaseDoc } from "../framework/doc";
 import { BadValuesError, NotAllowedError, NotFoundError } from "./errors";
 
 export interface UserDoc extends BaseDoc {
   username: string;
   password: string;
+  first_name: string;
+  last_name: string;
+  profile_photo: ObjectId; // string maybe?
 }
 
 export default class UserConcept {
   public readonly users = new DocCollection<UserDoc>("users");
 
-  async create(username: string, password: string) {
-    await this.canCreate(username, password);
-    const _id = await this.users.createOne({ username, password });
-    return { msg: "User created successfully!", user: await this.users.readOne({ _id }) };
+  async create(username: string, password: string, first_name: string, last_name: string, profile_photo: ObjectId) {
+    await this.canCreate(username, password, first_name, last_name, profile_photo);
+    const _id = await this.users.createOne({ username: username, password: password, first_name: first_name, last_name: last_name, profile_photo: profile_photo });
+    return { msg: "User created successfully!", user: await this.getUserById(_id) };
   }
 
   private sanitizeUser(user: UserDoc) {
     // eslint-disable-next-line
     const { password, ...rest } = user; // remove password
     return rest;
+  }
+
+  private sanitizeUsers(users: Array<UserDoc>) {
+    // eslint-disable-next-line
+    return users.map((user) => this.sanitizeUser(user));
   }
 
   async getUserById(_id: ObjectId) {
@@ -31,11 +39,26 @@ export default class UserConcept {
   }
 
   async getUserByUsername(username: string) {
-    const user = await this.users.readOne({ username });
+    const user = await this.users.readOne({ username: username });
     if (user === null) {
       throw new NotFoundError(`User not found!`);
     }
     return this.sanitizeUser(user);
+  }
+
+  async searchUsersByUsername(username: string) {
+    // REGEX SEARCHES FOR USERNAMES THAT MATCH
+    let query: Filter<UserDoc> = {};
+    if (username) {
+      query = { username: { $regex: `${username}`, $options: "i" } };
+    } else {
+      query = {};
+    }
+    const users = await this.users.readMany(query);
+    if (users === null) {
+      throw new NotFoundError(`User not found!`);
+    }
+    return await this.sanitizeUsers(users);
   }
 
   async idsToUsernames(ids: ObjectId[]) {
@@ -54,7 +77,7 @@ export default class UserConcept {
   }
 
   async authenticate(username: string, password: string) {
-    const user = await this.users.readOne({ username, password });
+    const user = await this.users.readOne({ username: username, password: password });
     if (!user) {
       throw new NotAllowedError("Username or password is incorrect.");
     }
@@ -81,9 +104,38 @@ export default class UserConcept {
     }
   }
 
-  private async canCreate(username: string, password: string) {
-    if (!username || !password) {
-      throw new BadValuesError("Username and password must be non-empty!");
+  private async isValidPassword(password: string) {
+    const isUpperCase = new RegExp(/(?=.*[A-Z])/g);
+    const isLowerCase = new RegExp(/(?=.*[a-z])/g);
+    const isSpecialChar = new RegExp(/(?=.*[!@#$%^&*])/g);
+    const isLong = new RegExp(/(?=.{7,})/g);
+    const isNumeric = new RegExp(/ (?=.*[0-9])/g);
+    // const hasWhiteSpace = new RegExp(/\s/g);
+
+    if (password.match(isUpperCase) && password.match(isSpecialChar) && password.match(isLowerCase) && password.match(isLong) && password.match(isNumeric)) {
+      // !password.match(hasWhiteSpace)) {
+      return true;
+    }
+    return false;
+  }
+
+  private async canCreate(username: string, password: string, first_name: string, last_name: string, profile_photo: ObjectId) {
+    if (!username) {
+      throw new BadValuesError("The username cannot be empty");
+    }
+    if (!first_name) {
+      throw new BadValuesError("User must enter a first name");
+    }
+    if (!last_name) {
+      throw new BadValuesError("User must enter a last name");
+    }
+    if (!profile_photo) {
+      throw new BadValuesError("User must upload a profile photo");
+    }
+    if (!this.isValidPassword(password)) {
+      throw new BadValuesError(
+        "Make the sure the password is at least 7 characters long, contains a combination of upper and lowercase letters, contains a number, contains a special character, and does not contain any whitespace",
+      );
     }
     await this.isUsernameUnique(username);
   }

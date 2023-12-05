@@ -26,10 +26,21 @@ class Routes {
     return await User.getUserByUsername(username);
   }
 
+  @Router.get("/usersSearchByUsername")
+  async searchUsersByUsername(username?: string) {
+    let users;
+    if (username) {
+      users = await User.searchUsersByUsername(username);
+    } else {
+      users = await User.getUsers();
+    }
+    return users;
+  }
+
   @Router.post("/users")
-  async createUser(session: WebSessionDoc, username: string, password: string) {
+  async createUser(session: WebSessionDoc, username: string, password: string, first_name: string, last_name: string, profile_photo: ObjectId) {
     WebSession.isLoggedOut(session);
-    const user = await User.create(username, password);
+    const user = await User.create(username, password, first_name, last_name, profile_photo);
     if (user.user?._id) {
       await Interest.create(user.user?._id);
       await AIAgent.create(user.user?._id);
@@ -46,8 +57,23 @@ class Routes {
   @Router.delete("/users")
   async deleteUser(session: WebSessionDoc) {
     const user = WebSession.getUser(session);
-    WebSession.end(session);
+
+    // Delete all media associated with the User
+    const user_media = await Media.getMediaByCreator(user);
+    await Promise.all(user_media.map((media) => Media.delete(media._id, user)));
+
+    // Delete all posts associated with the User
+    const posts = await Post.getPostsByAuthor(user);
+    for (const post of posts) {
+      // Delete all of the comments underneath the post
+      // await Comment.deleteByRoot(post._id);
+      await Post.delete(post._id);
+    }
+
+    // Delete user Interests
     await Interest.delete(user);
+
+    WebSession.end(session);
     return await User.delete(user);
   }
 
@@ -116,7 +142,7 @@ class Routes {
     let posts;
     if (author) {
       const id = (await User.getUserByUsername(author))._id;
-      posts = await Post.getByAuthor(id);
+      posts = await Post.getPostsByAuthor(id);
     } else {
       posts = await Post.getPosts({});
     }

@@ -28,8 +28,30 @@ export default class PostConcept {
     return posts;
   }
 
-  async getByAuthor(author: ObjectId) {
-    return await this.getPosts({ author });
+  async getPostById(_id: ObjectId) {
+    const post = await this.posts.readOne({ _id: _id });
+    if (post === null) {
+      throw new NotFoundError(`Post with the id '${_id}' was not found!`);
+    }
+    return post;
+    // return this.sanitizePost(post);
+  }
+
+  async getPostsByScopeId(scope: ObjectId, users?: Array<ObjectId>) {
+    let posts: Array<PostDoc>;
+    if (users !== undefined) {
+      posts = await this.posts.readMany({ scope: scope, author: { $in: users } }, { sort: { dateUpdated: -1 } });
+    } else {
+      posts = await this.posts.readMany({ scope: scope }, { sort: { dateUpdated: -1 } });
+    }
+    if (posts === null) {
+      throw new NotFoundError(`There are no posts in this scope.`);
+    }
+    return posts;
+  }
+
+  async getPostsByAuthor(author: ObjectId) {
+    return await this.getPosts({ author: author });
   }
 
   async update(_id: ObjectId, update: Partial<PostDoc>) {
